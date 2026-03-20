@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10mb"
+        max-file: "3"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - ML_SERVICE_URL=${ML_SERVICE_URL}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+
+  ml_service:
+    restart: always
+    environment:
+      - MODEL_RELOAD=false

@@ -1,0 +1,50 @@
+name: Deployment Risk Audit
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  risk_assessment:
+    name: AI Risk Prediction
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Calculate Git Diff Statistics
+        id: diff_stats
+        run: |
+          # Compare PR branch against base branch
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git diff --shortstat origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_stat.txt
+          
+          # Parse statistics
+          # Format: " X files changed, Y insertions(+), Z deletions(-)"
+          FILES_CHANGED=$(cat diff_stat.txt | grep -o '[0-9]* file' | awk '{print $1}' || echo 0)
+          LINES_ADDED=$(cat diff_stat.txt | grep -o '[0-9]* insertion' | awk '{print $1}' || echo 0)
+          LINES_DELETED=$(cat diff_stat.txt | grep -o '[0-9]* deletion' | awk '{print $1}' || echo 0)
+          
+          echo "files_changed=${FILES_CHANGED:-0}" >> $GITHUB_OUTPUT
+          echo "lines_added=${LINES_ADDED:-0}" >> $GITHUB_OUTPUT
+          echo "lines_deleted=${LINES_DELETED:-0}" >> $GITHUB_OUTPUT
+
+      - name: Execute AI Risk Analysis
+        env:
+          RISK_API_URL: ${{ secrets.RISK_API_URL }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          FILES_CHANGED: ${{ steps.diff_stats.outputs.files_changed }}
+          LINES_ADDED: ${{ steps.diff_stats.outputs.lines_added }}
+          LINES_DELETED: ${{ steps.diff_stats.outputs.lines_deleted }}
+        run: python backend/ci_risk_check.py
