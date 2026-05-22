@@ -14,7 +14,7 @@ class CodeChange(CodeChangeBase):
     id: int
     deployment_id: int
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class RiskPredictionBase(BaseModel):
     risk_score: float
@@ -26,7 +26,7 @@ class RiskPrediction(RiskPredictionBase):
     id: int
     deployment_id: int
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class DeploymentBase(BaseModel):
     commit_hash: str
@@ -45,7 +45,7 @@ class Deployment(DeploymentBase):
     code_changes: Optional[CodeChange] = None
     risk_prediction: Optional[RiskPrediction] = None
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class CodeAnalysisRequest(BaseModel):
     owner: str
@@ -73,3 +73,32 @@ class ApprovalRecommendation(BaseModel):
 class RuleConfig(BaseModel):
     low_threshold: float = 30.0
     high_threshold: float = 70.0
+
+# --- Authentication Schemas ---
+
+class UserBase(BaseModel):
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    role: Optional[str] = "Developer"
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+
+class User(UserBase):
+    id: int
+    is_active: int
+    class Config:
+        orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
